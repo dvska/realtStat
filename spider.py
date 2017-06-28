@@ -8,11 +8,12 @@ class RealtSpider(scrapy.Spider):
     ]
 
     def parse(self, response):
-        filename = 'results.txt'
+        file = open('results.txt', 'w', encoding='utf-16')
+        for item in response.css('div.bd-item > div.title'):
+            i = item.css('a::text').extract_first()
+            file.write(i)
+        file.close()
 
-        with open(filename, 'wb') as f:
-            for item in response.css('div.bd-item > div.title'):
-                f.write(item.css('a::text').extract_first())
 
         next_page = response.css('div.uni-paging a.active + a::attr("href")').extract_first()
         if next_page is not None:
