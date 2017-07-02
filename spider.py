@@ -19,12 +19,14 @@ class RealtSpider(scrapy.Spider):
         for item in items:
             price = re.findall('(\d+\s*\d*)', html.unescape(item.css('span.price-byr::text').extract_first()))
             if len(price) > 0:
-                price = price[0]
+                price = re.sub(r"\s+", "", price[0])
+            else:
+                price = None
             name = item.css('div.title a::text').extract_first()
-            self.data["items"].append({"name": name, "price": price})
+            self.data["items"].append({"name": name, "price": float(price)})
 
         next_page = response.css('div.uni-paging a.active + a::attr("href")').extract_first()
-        if next_page is not None and self.count < 10:
+        if next_page is not None and self.count < 1:
             self.count += 1
             yield response.follow(next_page, self.parse)
         else:
