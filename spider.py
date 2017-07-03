@@ -11,6 +11,7 @@ class RealtSpider(scrapy.Spider):
     name = "list"
     count = 0
     data = {"items": []}
+    pages = 1313
 
     start_urls = [
         'https://realt.by/sale/flats/',
@@ -26,10 +27,10 @@ class RealtSpider(scrapy.Spider):
             else:
                 price = None
             name = item.css('div.title a::text').extract_first()
-            self.data["items"].append({"name": name, "price": price})
+            self.data["items"].append({'name': name, 'price': price})
 
         next_page = response.css('div.uni-paging a.active + a::attr("href")').extract_first()
-        if next_page is not None and self.count < 10:
+        if next_page is not None and self.count < self.pages:
             self.count += 1
             yield response.follow(next_page, self.parse)
         else:
@@ -61,9 +62,9 @@ class RealtSpider(scrapy.Spider):
                 results.append(len(df[(df.price > i[0]) & (df.price <= i[1])]))
 
             x = range(0, 6)
-            labels = ['{} to {}'.format(x[0], x[1]) for x in intervals]
+            labels = ['{}$ - {}$'.format(x[0]/2, x[1]/2) for x in intervals]
 
             plt.plot(x, results, 'ro')
-            plt.xticks(x, labels, rotation='vertical')
+            plt.xticks(x, labels, rotation='horizontal')
             plt.margins(0.2)
             plt.show()
