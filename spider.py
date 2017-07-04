@@ -11,7 +11,7 @@ class RealtSpider(scrapy.Spider):
     name = "list"
     count = 0
     data = {"items": []}
-    pages = 1313
+    pages = 10
 
     start_urls = [
         'https://realt.by/sale/flats/',
@@ -19,6 +19,8 @@ class RealtSpider(scrapy.Spider):
 
     def parse(self, response):
         items = response.css('div.bd-item')
+        print(len(items))
+
 
         for item in items:
             price = re.findall('(\d+\s*\d*)', html.unescape(item.css('span.price-byr::text').extract_first()))
