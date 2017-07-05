@@ -1,17 +1,12 @@
-import scrapy
-import json
 import html
 import re
-import matplotlib.pyplot as plt
-import pandas as pd
-from pandas.io.json import json_normalize
+import scrapy
 
 
 class DetailedSpider(scrapy.Spider):
     name = "list"
     count = 0
-    data = {"items": []}
-    pages = 2
+    pages = 1
 
     start_urls = [
         'https://realt.by/sale/flats/',
@@ -23,9 +18,10 @@ class DetailedSpider(scrapy.Spider):
             price = float(re.sub(r"\s+", "", price[0]))
         else:
             price = None
-        city = response.xpath('//div/td[contains(text(), "Населенный пункт")/following-sibling::td/a/@text]').extract_first()
-        self.data["items"].append({'city': city, 'price': price})
-        return self.data
+        city = response.xpath(
+            u'//table/tbody/tr/td[text()="Населенный пункт"]/following-sibling::td/a/strong/text()').extract_first()
+        urlparts = response.url.strip("/").split("/")
+        return {'city': city, 'price': price, 'id': int(urlparts[len(urlparts)-1])}
 
     def parse(self, response):
         links = response.css('div.bd-item .title a')
@@ -38,8 +34,3 @@ class DetailedSpider(scrapy.Spider):
         if next_page is not None and self.count < self.pages:
             self.count += 1
             yield response.follow(next_page, self.parse)
-        else:
-            self.data["count"] = len(self.data["items"])
-            file = open('resultsDetailed.json', 'w', encoding='utf-16')
-            file.write(json.dumps(self.data, ensure_ascii=False, indent=4))
-            file.close()
