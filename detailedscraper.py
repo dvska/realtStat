@@ -23,8 +23,8 @@ class DetailedSpider(scrapy.Spider):
             price = float(re.sub(r"\s+", "", price[0]))
         else:
             price = None
-        name = response.css('div.inner-center-content h1::text').extract_first()
-        self.data["items"].append({'name': name, 'price': price})
+        city = response.xpath('//div/td[contains(text(), "Населенный пункт")/following-sibling::td/a/@text]').extract_first()
+        self.data["items"].append({'city': city, 'price': price})
         return self.data
 
     def parse(self, response):
