@@ -23,7 +23,7 @@ class DetailedSpider(scrapy.Spider):
             price = float(re.sub(r"\s+", "", price[0]))
         else:
             price = None
-        name = response.css('.inner-center-content h1::text').extract_first()
+        name = response.css('div.inner-center-content h1::text').extract_first()
         self.data["items"].append({'name': name, 'price': price})
         return self.data
 
