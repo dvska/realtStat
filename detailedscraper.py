@@ -21,17 +21,35 @@ class DetailedSpider(scrapy.Spider):
             price = float(re.sub(r"\s+", "", price[0]))
         else:
             price = None
-        city = response.xpath(
-            u'//table/tbody/tr/td[text()="Населенный пункт"]/following-sibling::td/a/strong/text()').extract_first()
-        district = response.xpath(
-            u'//table/tbody/tr/td[text()="Область"]/following-sibling::td/a/text()').extract_first()
-        agency = response.xpath(
-            u'//table/tbody/tr/td[text()="Агенство"]').extract_first()
-        date = response.xpath(
-            u'//table/tbody/tr/td[text()="Дата обновления"]/following-sibling::td/text()').extract_first()
-        street = response.xpath(u'//table/tbody/tr/td[text()="Адрес"]/following-sibling::td/a/text()').extract_first()
-        addressline = response.xpath(
-            u'//table/tbody/tr/td[text()="Адрес"]/following-sibling::td/text()').extract_first()
+
+        trselector = response.xpath(u'//table/tbody/tr')
+
+        city = trselector.xpath(
+            u'td[../td[text()="Населенный пункт"]]/a/strong/text()').extract_first()
+        district = trselector.xpath(
+            u'td[../td[text()="Область"]]/a/text()').extract_first()
+        agency = trselector.xpath(
+            u'td[text()="Агенство"]').extract_first()
+        date = trselector.xpath(
+            u'(td[../td[text()="Дата обновления"]])[2]/text()').extract_first()
+        street = trselector.xpath(u'td[../td[text()="Адрес"]]/a/text()').extract_first()
+        addressline = trselector.xpath(
+            u'(td[../td[text()="Адрес"]])[2]/text()').extract_first()
+        year = trselector.xpath(
+            u'(td[../td[text()="Год постройки"]])[2]/text()').extract_first()
+
+        square = trselector.xpath(
+            u'td[../td[contains(text(), "Площадь")]]/strong/text()').extract_first()
+
+        if square is not None:
+            squareparts = re.findall('(\d+\.*\d*)', square)
+            c = len(squareparts)
+            if c > 0:
+                obj["square"] = squareparts[0]
+            if c > 1:
+                obj["livesquare"] = squareparts[1]
+            if c > 2:
+                obj["kitchensquare"] = squareparts[2]
 
         if street is not None:
             obj["street"] = street.replace("ул.", "").strip()
@@ -64,6 +82,7 @@ class DetailedSpider(scrapy.Spider):
         obj["id"] = int(urlparts[len(urlparts) - 1])
         obj["district"] = district
         obj["date"] = date
+        obj["year"] = year
         return obj
 
     def parse(self, response):
