@@ -14,13 +14,7 @@ class DetailedSpider(scrapy.Spider):
     ]
 
     def parsedetailed(self, response):
-        obj = {}
         price = re.findall('(\d+\s*\d*)', html.unescape(response.css('span.price-byr::text').extract_first()))
-
-        if len(price) > 0:
-            price = float(re.sub(r"\s+", "", price[0]))
-        else:
-            price = None
 
         trselector = response.xpath(u'//table/tbody/tr')
 
@@ -38,11 +32,44 @@ class DetailedSpider(scrapy.Spider):
         year = trselector.xpath(
             u'(td[../td[text()="Год постройки"]])[2]/text()').extract_first()
 
+        floor = trselector.xpath(
+            u'(td[../td[contains(text(),"Этаж")]])[2]/text()').extract_first()
+
+        ceil = trselector.xpath(
+            u'(td[../td[contains(text(),"потолков")]])[2]/text()').extract_first()
+
         square = trselector.xpath(
             u'td[../td[contains(text(), "Площадь")]]/strong/text()').extract_first()
 
-        if square is not None:
-            squareparts = re.findall('(\d+\.*\d*)', square)
+        obj = self.parsefepage(
+            {"price": price, "city": city, "district": district, "agency": agency, "date": date, "street": street,
+             "addressline": addressline, "year": year, "floor": floor, "ceil": ceil, "square": square})
+        urlparts = response.url.strip("/").split("/")
+        obj["id"] = int(urlparts[len(urlparts) - 1])
+
+        return obj
+
+
+    @staticmethod
+    def parsefepage(o):
+        obj = {}
+
+        if len(o["price"]) > 0:
+            obj["price"] = float(re.sub(r"\s+", "", o["price"][0]))
+        else:
+            obj["price"] = None
+
+        if o["floor"] is not None:
+            floorparts = o["floor"].split('/')
+            obj["floor"] = floorparts[0]
+            obj["floortotal"] = floorparts[1]
+
+        if o["ceil"] is not None:
+            obj["ceil"] = re.findall('(\d+\.*\d*)', o["ceil"])[0]
+            obj["ceil"] = re.findall('(\d+\.*\d*)', o["ceil"])[0]
+
+        if o["square"] is not None:
+            squareparts = re.findall('(\d+\.*\d*)', o["square"])
             c = len(squareparts)
             if c > 0:
                 obj["square"] = squareparts[0]
@@ -51,39 +78,34 @@ class DetailedSpider(scrapy.Spider):
             if c > 2:
                 obj["kitchensquare"] = squareparts[2]
 
-        if street is not None:
-            obj["street"] = street.replace("ул.", "").strip()
+        if o["street"] is not None:
+            obj["street"] = o["street"].replace("ул.", "").strip()
 
-        if addressline is not None:
-            addressparts = re.findall('(\d+)', addressline)
+        if o["addressline"] is not None:
+            addressparts = re.findall('(\d+)', o["addressline"])
             if len(addressparts) > 0:
                 obj["house"] = addressparts[0]
             if len(addressparts) > 1:
                 obj["flat"] = addressparts[1]
 
-        if date is not None:
-            date = datetime.strptime(date, '%Y-%M-%d')
+        if o["date"] is not None:
+            obj["date"] = datetime.strptime(o["date"], '%Y-%M-%d')
 
-        if agency is not None:
+        if o["agency"] is not None:
             obj["agency"] = True
         else:
             obj["agency"] = False
 
-        if city is not None:
-            cityparts = city.split(".")
-            city = cityparts[len(cityparts) - 1].strip()
+        if o["city"] is not None:
+            cityparts = o["city"].split(".")
+            obj["city"] = cityparts[len(cityparts) - 1].strip()
 
-        if district is not None:
-            district = district.replace("область", "").strip()
+        if o["district"] is not None:
+            obj["district"] = o["district"].replace("область", "").strip()
 
-        urlparts = response.url.strip("/").split("/")
-        obj["city"] = city
-        obj["price"] = price
-        obj["id"] = int(urlparts[len(urlparts) - 1])
-        obj["district"] = district
-        obj["date"] = date
-        obj["year"] = year
+        obj["year"] = o["year"]
         return obj
+
 
     def parse(self, response):
         links = response.css('div.bd-item .title a')
