@@ -21,7 +21,6 @@ class RealtSpider(scrapy.Spider):
         items = response.css('div.bd-item')
         print(len(items))
 
-
         for item in items:
             price = re.findall('(\d+\s*\d*)', html.unescape(item.css('span.price-byr::text').extract_first()))
             if len(price) > 0:
@@ -37,9 +36,8 @@ class RealtSpider(scrapy.Spider):
             yield response.follow(next_page, self.parse)
         else:
             self.data["count"] = len(self.data["items"])
-            file = open('results.json', 'w', encoding='utf-16')
-            file.write(json.dumps(self.data, ensure_ascii=False, indent=4))
-            file.close()
+            with open('results.json', 'w', encoding='utf-8') as file:
+                file.write(json.dumps(self.data, ensure_ascii=False, indent=4))
 
             df = json_normalize(self.data['items'])
             df.price = df.price.apply(pd.to_numeric)
@@ -63,8 +61,8 @@ class RealtSpider(scrapy.Spider):
             for i in intervals:
                 results.append(len(df[(df.price > i[0]) & (df.price <= i[1])]))
 
-            x = range(0, 6)
-            labels = ['{}$ - {}$'.format(x[0]/2, x[1]/2) for x in intervals]
+            x = list(range(0, 6))
+            labels = ['{}$ - {}$'.format(x[0] / 2, x[1] / 2) for x in intervals]
 
             plt.plot(x, results, 'ro')
             plt.xticks(x, labels, rotation='horizontal')

@@ -4,7 +4,7 @@ import datetime
 
 class DataStoragePipeline(object):
     def open_spider(self, spider):
-        self.file = open('resultsDetailed.json', 'w', encoding='utf-16')
+        self.file = open('resultsDetailed.json', 'w', encoding='utf-8')
         self.data = {"items": []}
 
     def close_spider(self, spider):

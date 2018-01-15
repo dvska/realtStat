@@ -16,30 +16,30 @@ class DetailedSpider(scrapy.Spider):
     def parsedetailed(self, response):
         price = re.findall('(\d+\s*\d*)', html.unescape(response.css('span.price-byr::text').extract_first()))
 
-        trselector = response.xpath(u'//table/tbody/tr')
+        trselector = response.xpath('//table/tbody/tr')
 
         city = trselector.xpath(
-            u'td[../td[text()="Населенный пункт"]]/a/strong/text()').extract_first()
+            'td[../td[text()="Населенный пункт"]]/a/strong/text()').extract_first()
         district = trselector.xpath(
-            u'td[../td[text()="Область"]]/a/text()').extract_first()
+            'td[../td[text()="Область"]]/a/text()').extract_first()
         agency = trselector.xpath(
-            u'td[text()="Агенство"]').extract_first()
+            'td[text()="Агенство"]').extract_first()
         date = trselector.xpath(
-            u'(td[../td[text()="Дата обновления"]])[2]/text()').extract_first()
-        street = trselector.xpath(u'td[../td[text()="Адрес"]]/a/text()').extract_first()
+            '(td[../td[text()="Дата обновления"]])[2]/text()').extract_first()
+        street = trselector.xpath('td[../td[text()="Адрес"]]/a/text()').extract_first()
         addressline = trselector.xpath(
-            u'(td[../td[text()="Адрес"]])[2]/text()').extract_first()
+            '(td[../td[text()="Адрес"]])[2]/text()').extract_first()
         year = trselector.xpath(
-            u'(td[../td[text()="Год постройки"]])[2]/text()').extract_first()
+            '(td[../td[text()="Год постройки"]])[2]/text()').extract_first()
 
         floor = trselector.xpath(
-            u'(td[../td[contains(text(),"Этаж")]])[2]/text()').extract_first()
+            '(td[../td[contains(text(),"Этаж")]])[2]/text()').extract_first()
 
         ceil = trselector.xpath(
-            u'(td[../td[contains(text(),"потолков")]])[2]/text()').extract_first()
+            '(td[../td[contains(text(),"потолков")]])[2]/text()').extract_first()
 
         square = trselector.xpath(
-            u'td[../td[contains(text(), "Площадь")]]/strong/text()').extract_first()
+            'td[../td[contains(text(), "Площадь")]]/strong/text()').extract_first()
 
         obj = self.parsefepage(
             {"price": price, "city": city, "district": district, "agency": agency, "date": date, "street": street,
@@ -48,7 +48,6 @@ class DetailedSpider(scrapy.Spider):
         obj["id"] = int(urlparts[len(urlparts) - 1])
 
         return obj
-
 
     @staticmethod
     def parsefepage(o):
@@ -83,7 +82,7 @@ class DetailedSpider(scrapy.Spider):
 
         if o["addressline"] is not None:
             addressparts = re.findall('(\d+)', o["addressline"])
-            if len(addressparts) > 0:
+            if addressparts:
                 obj["house"] = addressparts[0]
             if len(addressparts) > 1:
                 obj["flat"] = addressparts[1]
@@ -91,10 +90,7 @@ class DetailedSpider(scrapy.Spider):
         if o["date"] is not None:
             obj["date"] = datetime.strptime(o["date"], '%Y-%M-%d')
 
-        if o["agency"] is not None:
-            obj["agency"] = True
-        else:
-            obj["agency"] = False
+        obj["agency"] = o["agency"] is not None
 
         if o["city"] is not None:
             cityparts = o["city"].split(".")
@@ -105,7 +101,6 @@ class DetailedSpider(scrapy.Spider):
 
         obj["year"] = o["year"]
         return obj
-
 
     def parse(self, response):
         links = response.css('div.bd-item .title a')
